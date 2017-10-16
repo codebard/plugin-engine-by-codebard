@@ -1,0 +1,1 @@
+<button class="button" onclick="window.location='{***button_url***}';">{***button_label***}</button>

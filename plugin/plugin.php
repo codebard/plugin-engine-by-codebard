@@ -102,13 +102,7 @@ class PLUGINPREFIX_plugin extends PLUGINPREFIX_core
 	{
 		global $post;
 	
-		
-		if(is_singular() AND isset($this->opt['post_button']['show_button_under_posts']) AND $this->opt['post_button']['show_button_under_posts']=='yes')
-		{
-		
-			$wordpress_content = $this->append_to_content($wordpress_content,$this->opt['post_button']['append_to_content_order']);
-			return $wordpress_content;
-		}
+		// Do stuff here	
 	
 		return $wordpress_content;
 	}

@@ -801,7 +801,7 @@ class PLUGINPREFIX_core {
 		
 		}
 		
-		$template_vars=array('tab'=>$tab,'referer'=>$_SERVER['HTTP_REFERER']);
+		$template_vars=array('tab'=>$tab,'referer'=> isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : "");
 
 		// We don't want admin settings page headers and footers to be filtered by anyone. Therefore we don't use load_template here
 		
@@ -850,7 +850,7 @@ class PLUGINPREFIX_core {
 			$tab='';
 		}
 		
-		$template_vars=array('tab'=>$tab,'referer'=>$_SERVER['HTTP_REFERER']);		
+		$template_vars=array('tab'=>$tab,'referer'=> isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : "");		
 
 		$admin_settings_form_header = $this->process_vars_to_template($template_vars, $admin_settings_form_header);
 		
@@ -878,7 +878,7 @@ class PLUGINPREFIX_core {
 		}
 				
 		
-		$template_vars=array('tab'=>$tab,'referer'=>$_SERVER['HTTP_REFERER']);		
+		$template_vars=array('tab'=>$tab,'referer'=> isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : "");		
 
 		$admin_settings_form_footer = $this->process_vars_to_template($template_vars, $admin_settings_form_footer);
 		

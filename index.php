@@ -478,7 +478,10 @@ class PLUGINPREFIX_core {
 		{
 			return false;			
 		}
-
+		// Get options just in case it is not loaded during activate or install - this will carry over to all other functions:
+		
+		$this->opt=get_option($this->internal['prefix'].'options');
+				
 		$this->create_tables();		
 		
 		$this->reset_languages();
@@ -515,6 +518,9 @@ class PLUGINPREFIX_core {
 		
 		add_action( 'admin_notices', array(&$this,'admin_notices'));
 		
+		add_action( 'wp_ajax_'.$this->internal['prefix'].'dismiss_admin_notice', array( &$this, 'dismiss_admin_notice' ),10,1 );
+		
+				
 		if($this->internal['requested_action']!='')
 		{
 			$this->{$this->internal['requested_action']}($_REQUEST);
@@ -801,7 +807,7 @@ class PLUGINPREFIX_core {
 		
 		}
 		
-		$template_vars=array('tab'=>$tab,'referer'=> isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : "");
+		$template_vars=array('tab'=>$tab,'referer'=>$_SERVER['HTTP_REFERER']);
 
 		// We don't want admin settings page headers and footers to be filtered by anyone. Therefore we don't use load_template here
 		
@@ -849,7 +855,7 @@ class PLUGINPREFIX_core {
 		{
 			$tab='';
 		}
-		
+	
 		$template_vars=array('tab'=>$tab,'referer'=> isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : "");		
 
 		$admin_settings_form_header = $this->process_vars_to_template($template_vars, $admin_settings_form_header);
@@ -878,7 +884,7 @@ class PLUGINPREFIX_core {
 		}
 				
 		
-		$template_vars=array('tab'=>$tab,'referer'=> isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : "");		
+		$template_vars=array('tab'=>$tab,'referer'=>$_SERVER['HTTP_REFERER']);		
 
 		$admin_settings_form_footer = $this->process_vars_to_template($template_vars, $admin_settings_form_footer);
 		
@@ -1317,9 +1323,9 @@ class PLUGINPREFIX_core {
 				'".@$args[$type.'_sort']."',
 				'".@$args[$type.'_created']."',
 				'".@$args[$type.'_modified']."',
-				'".@$args[$type.'_title']."',
-				'".@$args[$type.'_content']."',
-				'".@$args[$type.'_user']."',
+				'".esc_sql(@$args[$type.'_title'])."',
+				'".esc_sql(@$args[$type.'_content'])."',
+				'".esc_sql(@$args[$type.'_user'])."',
 				'".@$args[$type.'_group']."'
 			
 			)"
@@ -1472,6 +1478,7 @@ class PLUGINPREFIX_core {
 				
 				$current_entry=get_option($this->internal['prefix'].'lang_'.$lang_code);
 				
+				
 				if(!is_array($current_entry))
 				{
 					// If no option exists lets init this var as an array so we can merge. In case of existing option in db, this will allow us to just add the new language entries to existing ones.
@@ -1487,8 +1494,6 @@ class PLUGINPREFIX_core {
 					
 				);	
 
-			
-				
 				// Save the 
 				update_option($this->internal['prefix'].'lang_'.$lang_code,$current_entry);
 					
@@ -1607,6 +1612,18 @@ class PLUGINPREFIX_core {
 			$lang = 'en-US';			
 		}		
 		
+		$lang_file = $this->internal['plugin_path'].'plugin/includes/languages/'.$lang.'.php';
+		
+		if(!file_exists($lang_file))
+		{
+			$lang='en-US';
+			$this->opt['lang']='en-US';
+			$this->update_opt();
+			$lang_file = $this->internal['plugin_path'].'plugin/includes/languages/'.$lang.'.php';
+			
+		}
+		
+		 
 		// Get saved values in db:
 		
 		$language_values = get_option($this->internal['prefix'].'lang_'.$lang);
@@ -1622,20 +1639,13 @@ class PLUGINPREFIX_core {
 		
 		// Get the language from language file:
 
-		$lang_file = $this->internal['plugin_path'].'plugin/includes/languages/'.$lang.'.php';
+		include($lang_file);
 		
-		if(file_exists($lang_file))
-		{
-			
-			include($lang_file);
-			
-			$language_values = array_replace_recursive(
-			
-								$lang,
-								$language_values
-			);
-			
-		}
+		$language_values = array_replace_recursive(
+		
+							$lang,
+							$language_values
+		);
 	
 		return array_map('stripslashes', $language_values);
 			
@@ -1729,14 +1739,23 @@ class PLUGINPREFIX_core {
 	}
 	public function dismiss_admin_notice_c($v1)
 	{
-		$request=$v1;
-	
+		$request=$_POST;
+		
+		$direct=$v1;
+		
+		//wp_send_json($request);
 		if(!current_user_can('manage_options'))
 		{
 			return false;
 		}
-	
-
+		//wp_send_json($this->opt['content']);
+		
+		if(isset($direct) AND is_array($direct))
+		{
+			$request=$direct;
+			
+		}
+		
 		unset($this->opt['content']['perma_notices'][$request['notice_type']][$request['notice_id']]);
 		
 		$this->update_opt();
@@ -1852,7 +1871,7 @@ class PLUGINPREFIX_core {
 		if($perma)
 		{
 			// Its a perma notice. Add it to relevant section in options:
-		
+	
 			$this->opt['content'][$side][$type][$key]=$content;
 			
 			$this->update_opt();

@@ -49,7 +49,7 @@ class PLUGINPREFIX_core {
 		$this->internal['admin_url'] = trailingslashit(get_admin_url());
 		$this->internal['site_url'] = get_site_url();	
 		$this->internal['admin_page_url'] = get_admin_url();	
-
+		
 		require_once($this->internal['plugin_path'].'core/includes/default_internal_vars.php');
 		require_once($this->internal['plugin_path'].'plugin/includes/default_internal_vars.php');
 		require_once($this->internal['plugin_path'].'plugin/includes/hardcoded_vars.php');
@@ -520,7 +520,11 @@ class PLUGINPREFIX_core {
 		
 		add_action( 'wp_ajax_'.$this->internal['prefix'].'dismiss_admin_notice', array( &$this, 'dismiss_admin_notice' ),10,1 );
 		
+		add_filter( 'pre_set_site_transient_update_plugins', array(&$this, 'check_for_update' ) );
+		
+		add_filter( 'plugins_api', array( &$this, 'injectInfo' ), 90, 3 );
 				
+		
 		if($this->internal['requested_action']!='')
 		{
 			$this->{$this->internal['requested_action']}($_REQUEST);
@@ -543,7 +547,7 @@ class PLUGINPREFIX_core {
 		{
 			// If a table structure is not given, use default sql:
 			
-			if($this->internal['tables'][$key]['structure']=='')
+			if(!isset($this->internal['tables'][$key]['structure']) OR $this->internal['tables'][$key]['structure']=='')
 			{
 				$table_structure=$this->internal['default_table_structure'];
 			
@@ -563,22 +567,22 @@ class PLUGINPREFIX_core {
 				
 				if(substr($prefix_structure[$row_key],0,4)=='KEY ')
 				{
-					$key_it = str_replace('KEY ','KEY '.$key.'_',$prefix_structure[$row_key])."\n";
-					$key_it = str_replace(' (',' ('.$key.'_',$key_it)."\n";
+					$key_it = str_replace('KEY ',"\n".'KEY '.$key.'_',$prefix_structure[$row_key]);
+					$key_it = str_replace(' (',' ('.$key.'_',$key_it);
 					$prefixed_table_structure .= $key_it;
 				}
 				else
 				{
-					$prefixed_table_structure .= $key.'_'.$prefix_structure[$row_key]."\n";					
+					$prefixed_table_structure .= $key.'_'.$prefix_structure[$row_key];					
 				}
 				
 			}
-			$sql="CREATE TABLE ".$wpdb->prefix.$this->internal['id']."_".$key." (
-			".$prefixed_table_structure."
-			".$added_fields."
-			  PRIMARY KEY  (".$key."_id)
-			) ".$charset_collate;
+$sql="CREATE TABLE ".$wpdb->prefix.$this->internal['id']."_".$key." (
+".$prefixed_table_structure."
+PRIMARY KEY  (".$key."_id)
+) ".$charset_collate;
 		
+			
 			dbDelta( $sql );
 		}
 		
@@ -605,14 +609,14 @@ class PLUGINPREFIX_core {
 				
 			}
 			$type_default='';
-			if($this->internal['meta_tables'][$key]['default']!='')
+			if(isset($this->internal['meta_tables'][$key]['default']) AND $this->internal['meta_tables'][$key]['default']!='')
 			{
 				$type_default=' DEFAULT '.$this->internal['meta_tables'][$key]['default'];			
 				
 			}
 			if($this->internal['meta_tables'][$key]['type']=='longtext')
 			{
-				$table_structure=str_replace('{REPLACEVALUE}','value '.$this->internal['meta_tables'][$key]['type'].$type_length.$type_default,$table_structure);				
+				$table_structure=str_replace('{REPLACEVALUE}','value '.$this->internal['meta_tables'][$key]['type']." NOT NULL",$table_structure);				
 			}
 			else			
 			{
@@ -633,14 +637,14 @@ class PLUGINPREFIX_core {
 					$key_it='';
 					if($this->internal['meta_tables'][$key]['type']!='longtext')
 					{
-						$key_it = str_replace('KEY ','KEY '.$key.'_',$prefix_structure[$row_key])."\n";
-						$key_it = str_replace(' (',' ('.$key.'_',$key_it)."\n";
+						$key_it = str_replace('KEY ',"\n".'KEY '.$key.'_',$prefix_structure[$row_key]);
+						$key_it = str_replace(' (',' ('.$key.'_',$key_it)."";
 					}	
 					$prefixed_table_structure .= $key_it;
 				}
 				else
 				{
-					$prefixed_table_structure .= $key.'_'.$prefix_structure[$row_key]."\n";					
+					$prefixed_table_structure .= $key.'_'.$prefix_structure[$row_key];					
 				}
 				
 			}
@@ -648,12 +652,12 @@ class PLUGINPREFIX_core {
 
 		
 						
-			$sql="CREATE TABLE ".$wpdb->prefix.$this->internal['id']."_".$key." (
-			".$prefixed_table_structure."
-			".$added_fields."
-			  PRIMARY KEY  (".$key."_id)
-			) ".$charset_collate;
+$sql="CREATE TABLE ".$wpdb->prefix.$this->internal['id']."_".$key." (
+".$prefixed_table_structure."
+PRIMARY KEY  (".$key."_id)
+) ".$charset_collate;
 			
+				
 			dbDelta( $sql );
 		}
 		
